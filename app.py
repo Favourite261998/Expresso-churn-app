@@ -10,7 +10,7 @@ st.set_page_config(page_title="Expresso Churn Prediction", layout="centered")
 MODEL_NAME = "espreso_churn_model.pkl"
 
 # Precomputed mappings & defaults
-   mappings = {
+mappings = {
     "REGION": {"Unknown": 0, "Dakar": 1, "Thies": 2, "Diourbel": 3},
     "TENURE": {"Unknown": 0, "Short": 1, "Medium": 2, "Long": 3},
     "MRG": {"Unknown": 0, "Yes": 1, "No": 2},
@@ -111,5 +111,6 @@ if submit:
     except Exception as e:
         st.error("Prediction failed — see details below.")
         st.exception(e)
+
 
 
