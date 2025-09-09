@@ -7,51 +7,46 @@ import streamlit as st
 st.set_page_config(page_title="Expresso Churn Prediction", layout="centered")
 
 # ---------- CONFIG ----------
-CSV_NAME = "Expresso_churn_dataset.csv"
 MODEL_NAME = "espreso_churn_model.pkl"
 
 # ---------- utilities ----------
-@st.cache_data(show_spinner=False)
-def load_dataset(out=CSV_NAME):
-    if not os.path.exists(out):
-        st.error(f"❌ Dataset file '{out}' not found in folder.")
+
+@st.cache_resource(show_spinner=False)
+def load_model(path=MODEL_NAME):
+    if not os.path.exists(path):
+        st.error(f"❌ Model file '{path}' not found in folder.")
         st.stop()
-    df = pd.read_csv(out)
-    return df
+    return joblib.load(path)
 
-@st.cache_data(show_spinner=False)
-def prepare_dataset_and_mappings(df):
-    df = df.copy()
-    df = df.drop(columns=["user_id"], errors="ignore")
+model = load_model()
 
-    # Fill categorical
-    cat_cols = ["REGION", "TENURE", "MRG", "TOP_PACK"]
-    for c in cat_cols:
-        if c in df.columns:
-            df[c] = df[c].fillna("Unknown").astype(str)
-        else:
-            df[c] = "Unknown"
+# Precomputed mappings & defaults
+   mappings = {
+    "REGION": {"Unknown": 0, "Dakar": 1, "Thies": 2, "Diourbel": 3},
+    "TENURE": {"Unknown": 0, "Short": 1, "Medium": 2, "Long": 3},
+    "MRG": {"Unknown": 0, "Yes": 1, "No": 2},
+    "TOP_PACK": {"Unknown": 0, "Pack1": 1, "Pack2": 2, "Pack3": 3},
+}
 
-    # Fill numeric
-    num_cols = [c for c in df.columns if df[c].dtype in ("float64", "int64") and c != "CHURN"]
-    for c in num_cols:
-        df[c] = df[c].fillna(df[c].median())
-
-    # Create mappings
-    mappings = {}
-    for c in cat_cols:
-        cats = sorted(df[c].unique().tolist())
-        mappings[c] = {cat: idx for idx, cat in enumerate(cats)}
-
-    numeric_defaults = {c: float(df[c].median()) for c in num_cols if c in df.columns}
-    return mappings, numeric_defaults
+# Replace values below with medians from the dataset
+numeric_defaults = {
+    "MONTANT": 3000.0,          # median
+    "FREQUENCE_RECH": 7.0,      # median
+    "REVENUE": 3000.0,          # median
+    "ARPU_SEGMENT": 1000.0,     # median
+    "FREQUENCE": 9.0,           # median
+    "DATA_VOLUME": 257.0,       # median
+    "ON_NET": 27.0,             # median
+    "ORANGE": 29.0,             # median
+    "TIGO": 6.0,                # median
+    "ZONE1": 1.0,               # median
+    "ZONE2": 2.0,               # median
+    "REGULARITY": 24.0,         # median
+    "FREQ_TOP_PACK": 5.0        # median
+}
 
 def map_cat(value, mapping):
-    if value in mapping:
-        return mapping[value]
-    if "Unknown" in mapping:
-        return mapping["Unknown"]
-    return 0
+    return mapping.get(value, mapping.get("Unknown", 0))
 
 # ---------- Load model ----------
 @st.cache_resource(show_spinner=False)
@@ -70,9 +65,6 @@ def load_model(path=MODEL_NAME):
 st.title("📱 Expresso Churn Prediction (Streamlit)")
 
 model = load_model()
-df = load_dataset()
-mappings, numeric_defaults = prepare_dataset_and_mappings(df)
-
 FEATURES = [
     "REGION","TENURE","MONTANT","FREQUENCE_RECH","REVENUE",
     "ARPU_SEGMENT","FREQUENCE","DATA_VOLUME","ON_NET","ORANGE",
@@ -130,3 +122,4 @@ if submit:
     except Exception as e:
         st.error("Prediction failed — see details below.")
         st.exception(e)
+
