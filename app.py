@@ -9,17 +9,6 @@ st.set_page_config(page_title="Expresso Churn Prediction", layout="centered")
 # ---------- CONFIG ----------
 MODEL_NAME = "espreso_churn_model.pkl"
 
-# ---------- utilities ----------
-
-@st.cache_resource(show_spinner=False)
-def load_model(path=MODEL_NAME):
-    if not os.path.exists(path):
-        st.error(f"❌ Model file '{path}' not found in folder.")
-        st.stop()
-    return joblib.load(path)
-
-model = load_model()
-
 # Precomputed mappings & defaults
    mappings = {
     "REGION": {"Unknown": 0, "Dakar": 1, "Thies": 2, "Diourbel": 3},
@@ -122,4 +111,5 @@ if submit:
     except Exception as e:
         st.error("Prediction failed — see details below.")
         st.exception(e)
+
 
